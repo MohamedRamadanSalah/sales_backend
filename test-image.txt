@@ -1,0 +1,1 @@
+Not a real image, but bypasses mimetype if we mock it for tests, though multer needs multipart.
