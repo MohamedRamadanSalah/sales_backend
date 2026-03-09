@@ -77,11 +77,24 @@ async function deleteFile(fileUrl) {
     }
 
     if (STORAGE_PROVIDER === 'cloudinary') {
-        // In production, implement Cloudinary delete:
-        // const cloudinary = require('cloudinary').v2;
-        // await cloudinary.uploader.destroy(publicId);
-        logger.warn('Cloudinary delete not implemented yet', { fileUrl });
-        return false;
+        try {
+            const cloudinary = require('cloudinary').v2;
+            cloudinary.config({
+                cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+                api_key: process.env.CLOUDINARY_API_KEY,
+                api_secret: process.env.CLOUDINARY_API_SECRET,
+            });
+            // Extract public_id from the Cloudinary URL
+            // e.g. https://res.cloudinary.com/name/image/upload/v123/real-estate/abc.jpg => real-estate/abc
+            const match = fileUrl.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
+            if (match) {
+                await cloudinary.uploader.destroy(match[1]);
+            }
+            return true;
+        } catch (err) {
+            logger.error('Failed to delete Cloudinary file', { fileUrl, error: err.message });
+            return false;
+        }
     }
 
     // Local filesystem
