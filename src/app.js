@@ -71,6 +71,16 @@ app.use(i18nMiddleware);
 app.use(sanitize);
 app.use(auditMiddleware);
 
+// ─── Root Route ───
+app.get('/', (req, res) => {
+    res.json({
+        status: 'ok',
+        message: 'Sales Backend API is running',
+        version: '1.0.0',
+        docs: '/api/health',
+    });
+});
+
 // ─── Health Route (with DB connectivity check) ───
 app.get('/api/health', async (req, res) => {
     try {
