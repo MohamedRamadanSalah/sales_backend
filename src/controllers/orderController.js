@@ -71,25 +71,27 @@ exports.createOrder = async (req, res, next) => {
                 invoice_id: `INV-${new Date().getFullYear()}${String(new Date().getMonth()+1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}-${String(orderId).padStart(4, '0')}`,
                 issue_date: new Date().toISOString(),
                 expiry_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "PENDING_APPROVAL"
+                status: "PENDING_APPROVAL",
+                transaction_type: property.listing_type === 'sale' ? "BUY" : "RENT",
+                currency: "EGP"
             },
             parties: {
                 buyer: { 
-                    name: `${client.first_name} ${client.last_name}`, 
-                    email: client.email, 
-                    phone: client.phone_number, 
+                    full_name: `${client.first_name} ${client.last_name}`, 
+                    contact_email: client.email, 
+                    contact_phone: client.phone_number, 
                     national_id: national_id || null, 
                     address: address || null 
                 },
                 seller: { 
-                    name: `${seller.first_name} ${seller.last_name}`, 
-                    email: seller.email, 
-                    phone: seller.phone_number, 
+                    full_name: `${seller.first_name} ${seller.last_name}`, 
+                    contact_email: seller.email, 
+                    contact_phone: seller.phone_number, 
                     national_id: null, 
                     address: null 
                 },
                 agent: null,
-                platform_admin: { name: "Aqarak Sales Dept", email: "sales@aqarak.com" }
+                platform_admin: { assigned_admin_id: "SYS-ADMIN-1", review_status: "AWAITING_REVIEW" }
             },
             property_details: {
                 property_id: property.id,
@@ -154,12 +156,18 @@ exports.createOrder = async (req, res, next) => {
                 { document: "property_deed", status: "provided" }
             ],
             terms_and_conditions: {
-                validity_period_days: 3,
-                cancellation_policy: "Standard real estate cancellation policy applies.",
-                default_penalties: "10% penalty on total amount if cancelled after seller approval."
+                cancellation_policy: {
+                    before_admin_approval: "Standard real estate cancellation policy applies.",
+                    after_admin_approval_before_signing: "10% penalty on total amount if cancelled after seller approval.",
+                    after_contract_signing: "No refund governing law"
+                },
+                dispute_resolution: "Arbitration in Cairo",
+                governing_law: "Egyptian Law",
+                validity_clause: "Valid for 30 days"
             },
             audit_trail: {
-                created_at: new Date().toISOString(),
+                creation_timestamp: new Date().toISOString(),
+                last_modified_at: new Date().toISOString(),
                 created_by: `Buyer ID: ${client_id}`,
                 modification_history: []
             },
@@ -223,13 +231,15 @@ exports.previewInvoice = async (req, res, next) => {
                 invoice_id: "DRAFT-PREVIEW",
                 issue_date: new Date().toISOString(),
                 expiry_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                status: "PREVIEW"
+                status: "PENDING_APPROVAL",
+                transaction_type: property.listing_type === 'sale' ? "BUY" : "RENT",
+                currency: "EGP"
             },
             parties: {
-                buyer: { name: `${client.first_name} ${client.last_name}`, email: client.email, phone: client.phone_number },
-                seller: { name: `${seller.first_name} ${seller.last_name}` },
+                buyer: { full_name: `${client.first_name} ${client.last_name}`, contact_email: client.email, contact_phone: client.phone_number, national_id: null, address: null },
+                seller: { full_name: `${seller.first_name} ${seller.last_name}`, contact_email: seller.email, contact_phone: seller.phone_number, national_id: null, address: null },
                 agent: null,
-                platform_admin: { name: "Aqarak Sales Dept" }
+                platform_admin: { assigned_admin_id: "SYS-ADMIN-1", review_status: "AWAITING_REVIEW" }
             },
             property_details: {
                 property_id: property.id,
@@ -293,13 +303,19 @@ exports.previewInvoice = async (req, res, next) => {
                 { document: "property_deed", status: "provided" }
             ],
             terms_and_conditions: {
-                validity_period_days: 3,
-                cancellation_policy: "Standard real estate cancellation policy applies.",
-                default_penalties: "10% penalty on total amount if cancelled after seller approval."
+                cancellation_policy: {
+                    before_admin_approval: "Standard real estate cancellation policy applies.",
+                    after_admin_approval_before_signing: "10% penalty on total amount if cancelled after seller approval.",
+                    after_contract_signing: "No refund governing law"
+                },
+                dispute_resolution: "Arbitration in Cairo",
+                governing_law: "Egyptian Law",
+                validity_clause: "Valid for 30 days"
             },
             audit_trail: {
-                created_at: new Date().toISOString(),
-                created_by: "System Preview",
+                creation_timestamp: new Date().toISOString(),
+                last_modified_at: new Date().toISOString(),
+                created_by: `Buyer ID: ${client_id}`,
                 modification_history: []
             },
             final_status: "DRAFT"
