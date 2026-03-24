@@ -92,24 +92,40 @@ exports.createOrder = async (req, res, next) => {
                 platform_admin: { name: "Aqarak Sales Dept", email: "sales@aqarak.com" }
             },
             property_details: {
-                property_id: `PRP-${property.id}`,
+                property_id: property.id,
                 title: property.title_ar,
-                location: property.loc_ar,
+                type: property.listing_type || 'apartment',
+                location: {
+                    country: "Egypt",
+                    city: property.loc_en || "Cairo",
+                    district: null,
+                    street: property.loc_ar || null,
+                    building_number: null,
+                    floor: null,
+                    unit_number: null
+                },
                 area_sqm: parseFloat(property.area_sqm),
-                property_type: property.listing_type === 'sale' ? 'Sale' : 'Rent',
+                legal_status: property.legal_status === 'registered' ? "clean title" : "under dispute",
                 registration_number: null,
-                title_deed_status: property.legal_status || "unregistered",
-                legal_status: property.legal_status === 'registered' ? "CLEAR" : "REQUIRES_REVIEW"
+                deed_number: null,
+                year_built: null,
+                furnishing_status: null,
+                condition: null
             },
             financial_breakdown: {
-                currency: "EGP",
                 base_price: basePrice,
-                vat_amount: vat,
-                brokerage_fee: brokerage,
-                registration_fee: 5000,
-                negotiated_discount: 0,
+                price_per_sqm: basePrice / parseFloat(property.area_sqm || 1),
+                negotiated_discount: { amount: 0, reason: null },
+                platform_commission: { percentage: 0, amount: 0 },
+                agent_commission: { percentage: 2.5, amount: brokerage },
+                legal_documentation_fees: 0,
+                registration_fees: 5000,
+                notarization_fees: 0,
+                vat: { percentage: 14, amount: vat },
+                other_fees: [],
                 total_amount_due: totalAmount + 5000,
-                deposit_required: parseFloat(property.down_payment || 0)
+                deposit_required: { amount: parseFloat(property.down_payment || 0), deadline: null },
+                remaining_balance: (totalAmount + 5000) - parseFloat(property.down_payment || 0)
             },
             payment_plan: {
                 payment_method: payment_method || "CASH",
@@ -118,24 +134,25 @@ exports.createOrder = async (req, res, next) => {
                 ] : null,
                 mortgage_details: null
             },
-            legal_and_compliance: {
-                kyc_status_buyer: national_id ? "VERIFIED" : "PENDING",
-                kyc_status_seller: "PENDING",
-                aml_flag: "CLEAN",
-                outstanding_debts_on_property: 0,
-                compliance_notes: []
+            legal_compliance_flags: {
+                is_title_clear: true,
+                outstanding_debts: false,
+                outstanding_debts_details: [],
+                liens_or_encumbrances: false,
+                requires_noc: false,
+                anti_money_laundering_check: "passed",
+                compliance_notes: null
             },
             approval_workflow: {
-                seller_approval: { status: "PENDING", approved_at: null, signature_hash: null },
-                admin_approval: { status: "PENDING", approved_at: null, admin_id: null, notes: null }
+                seller_approval: { status: "PENDING", approved_at: null, signature: null },
+                admin_approval: { status: "PENDING", approved_at: null, admin_id: null, notes: "" },
+                final_status: "PENDING",
+                rejection_reason: null
             },
-            document_checklist: {
-                buyer_id: national_id ? "PROVIDED" : "MISSING",
-                seller_id: "MISSING",
-                property_deed: "PROVIDED",
-                tax_clearance: "PENDING",
-                initial_contract: "PENDING"
-            },
+            attached_documents_checklist: [
+                { document: "buyer_id", status: national_id ? "provided" : "missing" },
+                { document: "property_deed", status: "provided" }
+            ],
             terms_and_conditions: {
                 validity_period_days: 3,
                 cancellation_policy: "Standard real estate cancellation policy applies.",
@@ -215,47 +232,66 @@ exports.previewInvoice = async (req, res, next) => {
                 platform_admin: { name: "Aqarak Sales Dept" }
             },
             property_details: {
-                property_id: `PRP-${property.id}`,
+                property_id: property.id,
                 title: property.title_ar,
-                location: property.loc_ar,
+                type: property.listing_type || 'apartment',
+                location: {
+                    country: "Egypt",
+                    city: property.loc_en || "Cairo",
+                    district: null,
+                    street: property.loc_ar || null,
+                    building_number: null,
+                    floor: null,
+                    unit_number: null
+                },
                 area_sqm: parseFloat(property.area_sqm),
-                property_type: property.listing_type === 'sale' ? 'Sale' : 'Rent',
-                legal_status: property.legal_status === 'registered' ? "CLEAR" : "REQUIRES_REVIEW",
-                title_deed_status: property.legal_status
+                legal_status: property.legal_status === 'registered' ? "clean title" : "under dispute",
+                registration_number: null,
+                deed_number: null,
+                year_built: null,
+                furnishing_status: null,
+                condition: null
             },
             financial_breakdown: {
-                currency: "EGP",
                 base_price: basePrice,
-                vat_amount: vat,
-                brokerage_fee: brokerage,
-                registration_fee: 5000,
-                negotiated_discount: 0,
+                price_per_sqm: basePrice / parseFloat(property.area_sqm || 1),
+                negotiated_discount: { amount: 0, reason: null },
+                platform_commission: { percentage: 0, amount: 0 },
+                agent_commission: { percentage: 2.5, amount: brokerage },
+                legal_documentation_fees: 0,
+                registration_fees: 5000,
+                notarization_fees: 0,
+                vat: { percentage: 14, amount: vat },
+                other_fees: [],
                 total_amount_due: totalAmount + 5000,
-                deposit_required: parseFloat(property.down_payment || 0)
+                deposit_required: { amount: parseFloat(property.down_payment || 0), deadline: null },
+                remaining_balance: (totalAmount + 5000) - parseFloat(property.down_payment || 0)
             },
             payment_plan: {
                 payment_method: "PENDING_SELECTION",
                 installment_schedule: null,
                 mortgage_details: null
             },
-            legal_and_compliance: {
-                kyc_status_buyer: "PENDING",
-                kyc_status_seller: "PENDING",
-                aml_flag: "CLEAN",
-                outstanding_debts_on_property: 0,
-                compliance_notes: []
+            legal_compliance_flags: {
+                is_title_clear: true,
+                outstanding_debts: false,
+                outstanding_debts_details: [],
+                liens_or_encumbrances: false,
+                requires_noc: false,
+                anti_money_laundering_check: "passed",
+                compliance_notes: null
             },
             approval_workflow: {
-                seller_approval: { status: "PENDING" },
-                admin_approval: { status: "PENDING" }
+                seller_approval: { status: "PENDING", approved_at: null, signature: null },
+                admin_approval: { status: "PENDING", approved_at: null, admin_id: null, notes: "" },
+                final_status: "PENDING",
+                rejection_reason: null
             },
-            document_checklist: {
-                buyer_id: "MISSING",
-                seller_id: "MISSING",
-                property_deed: "PROVIDED",
-                tax_clearance: "PENDING",
-                initial_contract: "PENDING"
-            },
+            attached_documents_checklist: [
+                { document: "buyer_id", status: "missing" },
+                { document: "seller_id", status: "missing" },
+                { document: "property_deed", status: "provided" }
+            ],
             terms_and_conditions: {
                 validity_period_days: 3,
                 cancellation_policy: "Standard real estate cancellation policy applies.",
