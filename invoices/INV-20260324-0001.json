@@ -1,0 +1,213 @@
+{
+  "invoice_metadata": {
+    "invoice_id": "INV-20260324-0001",
+    "issue_date": "2026-03-24",
+    "expiry_date": "2026-03-27",
+    "status": "PENDING_APPROVAL",
+    "transaction_type": "BUY",
+    "currency": "EGP"
+  },
+
+  "parties": {
+    "buyer": {
+      "full_name": null,
+      "national_id": null,
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null
+    },
+    "seller": {
+      "full_name": null,
+      "national_id": null,
+      "contact_email": null,
+      "contact_phone": null,
+      "address": null
+    },
+    "agent": {
+      "name": null,
+      "license_number": null,
+      "agency": null,
+      "commission_rate": null
+    },
+    "platform_admin": {
+      "assigned_admin_id": null,
+      "review_status": "AWAITING_REVIEW"
+    }
+  },
+
+  "property_details": {
+    "property_id": null,
+    "title": null,
+    "type": null,
+    "location": {
+      "country": "Egypt",
+      "city": null,
+      "district": null,
+      "street": null,
+      "building_number": null,
+      "floor": null,
+      "unit_number": null
+    },
+    "area_sqm": null,
+    "legal_status": null,
+    "registration_number": null,
+    "deed_number": null,
+    "year_built": null,
+    "furnishing_status": null,
+    "condition": null
+  },
+
+  "financial_breakdown": {
+    "base_price": null,
+    "price_per_sqm": null,
+    "negotiated_discount": {
+      "amount": 0.00,
+      "reason": null
+    },
+    "platform_commission": {
+      "percentage": 2.50,
+      "amount": null
+    },
+    "agent_commission": {
+      "percentage": null,
+      "amount": null
+    },
+    "legal_documentation_fees": null,
+    "registration_fees": null,
+    "notarization_fees": null,
+    "vat": {
+      "percentage": 14.00,
+      "amount": null
+    },
+    "other_fees": [],
+    "total_amount_due": null,
+    "deposit_required": {
+      "amount": null,
+      "deadline": null
+    },
+    "remaining_balance": null
+  },
+
+  "payment_plan": {
+    "payment_method": null,
+    "installment_schedule": [],
+    "mortgage_details": {
+      "bank_name": null,
+      "loan_amount": null,
+      "duration_years": null,
+      "interest_rate": null
+    }
+  },
+
+  "legal_compliance_flags": {
+    "is_title_clear": null,
+    "outstanding_debts": false,
+    "outstanding_debts_details": [],
+    "liens_or_encumbrances": false,
+    "requires_noc": false,
+    "anti_money_laundering_check": "pending",
+    "compliance_notes": null
+  },
+
+  "approval_workflow": {
+    "seller_approval": {
+      "status": "PENDING",
+      "approved_at": null,
+      "signature": null
+    },
+    "admin_approval": {
+      "status": "BLOCKED_PENDING_REVIEW",
+      "approved_at": null,
+      "admin_id": null,
+      "notes": "BLOCKED: (1) Title clearance status is unverified (is_title_clear = null). (2) Anti-money laundering check is still 'pending'. (3) All 8 required documents have status 'missing'. Invoice cannot proceed to approval until all legal flags are resolved and required documents are provided."
+    },
+    "final_status": "PENDING",
+    "rejection_reason": null
+  },
+
+  "attached_documents_checklist": [
+    { "document": "National ID (Buyer)", "status": "missing" },
+    { "document": "National ID (Seller)", "status": "missing" },
+    { "document": "Property Deed", "status": "missing" },
+    { "document": "Title Certificate", "status": "missing" },
+    { "document": "NOC (No Objection Certificate)", "status": "missing" },
+    { "document": "Proof of Payment (Deposit)", "status": "missing" },
+    { "document": "Agent License", "status": "missing" },
+    { "document": "Site Inspection Report", "status": "missing" }
+  ],
+
+  "terms_and_conditions": {
+    "cancellation_policy": {
+      "before_admin_approval": "Full refund of any deposit paid. No penalties for either party.",
+      "after_admin_approval_before_signing": "Buyer forfeits 10% of deposit. Seller pays 5% penalty of base price if seller cancels.",
+      "after_contract_signing": "Cancelling party forfeits 15% of total transaction value as liquidated damages."
+    },
+    "dispute_resolution": "All disputes shall be resolved through binding arbitration under the rules of the Cairo Regional Centre for International Commercial Arbitration (CRCICA). If arbitration fails, matters shall be referred to the competent Egyptian courts.",
+    "governing_law": "Arab Republic of Egypt — governed by Egyptian Civil Code and Real Estate Registration Law No. 114 of 1946, as amended.",
+    "validity_clause": "This invoice is valid for 72 hours from issue_date. Failure to approve within this window will automatically void the order and release all parties from obligation."
+  },
+
+  "audit_trail": {
+    "created_by": "Aqarak Invoice Generation System v2.0",
+    "creation_timestamp": "2026-03-24T22:30:30+02:00",
+    "last_modified_at": "2026-03-24T22:30:30+02:00",
+    "modification_history": []
+  },
+
+  "missing_info": [
+    "buyer.full_name",
+    "buyer.national_id",
+    "buyer.contact_email",
+    "buyer.contact_phone",
+    "buyer.address",
+    "seller.full_name",
+    "seller.national_id",
+    "seller.contact_email",
+    "seller.contact_phone",
+    "seller.address",
+    "agent.name",
+    "agent.license_number",
+    "agent.agency",
+    "agent.commission_rate",
+    "platform_admin.assigned_admin_id",
+    "property_details.property_id",
+    "property_details.title",
+    "property_details.type",
+    "property_details.location.city",
+    "property_details.location.district",
+    "property_details.location.street",
+    "property_details.location.building_number",
+    "property_details.location.floor",
+    "property_details.location.unit_number",
+    "property_details.area_sqm",
+    "property_details.legal_status",
+    "property_details.registration_number",
+    "property_details.deed_number",
+    "property_details.year_built",
+    "property_details.furnishing_status",
+    "property_details.condition",
+    "financial_breakdown.base_price",
+    "financial_breakdown.price_per_sqm",
+    "financial_breakdown.agent_commission.percentage",
+    "financial_breakdown.legal_documentation_fees",
+    "financial_breakdown.registration_fees",
+    "financial_breakdown.notarization_fees",
+    "financial_breakdown.total_amount_due",
+    "financial_breakdown.deposit_required.amount",
+    "financial_breakdown.deposit_required.deadline",
+    "financial_breakdown.remaining_balance",
+    "payment_plan.payment_method",
+    "legal_compliance_flags.is_title_clear"
+  ],
+
+  "_schema_notes": {
+    "admin_approval_status_override": "Because multiple fields are null (buyer, seller, property, financials) and AML check is 'pending', admin_approval.status has been set to 'BLOCKED_PENDING_REVIEW' per output rules.",
+    "financial_consistency": "All financial totals cannot be verified as internally consistent because base_price and dependent values are null. These will be auto-calculated once base_price and area_sqm are provided.",
+    "legal_flag_triggered": true,
+    "legal_flag_reasons": [
+      "legal_compliance_flags.is_title_clear is null — title clearance unverified",
+      "legal_compliance_flags.anti_money_laundering_check is 'pending'",
+      "All 8 required documents have status 'missing'"
+    ]
+  }
+}
