@@ -4,6 +4,7 @@ const orderController = require('../controllers/orderController');
 const { authenticate, authorize } = require('../middlewares/auth');
 
 // Client routes
+router.get('/preview/:property_id', authenticate, orderController.previewInvoice);
 router.post('/', authenticate, orderController.createOrder);
 router.get('/my', authenticate, orderController.getMyOrders);
 
