@@ -16,4 +16,9 @@ router.post('/invoices', authenticate, authorize('admin'), orderController.creat
 router.get('/invoices', authenticate, authorize('admin'), orderController.getAllInvoices);
 router.patch('/invoices/:id/status', authenticate, authorize('admin'), orderController.updateInvoiceStatus);
 
+// Detailed Invoice Routes
+router.get('/invoices/:id/detail', authenticate, orderController.getDetailedInvoice);
+router.patch('/invoices/:id/seller-approval', authenticate, orderController.sellerInvoiceApproval);
+router.patch('/invoices/:id/admin-approval', authenticate, authorize('admin'), orderController.adminInvoiceApproval);
+
 module.exports = router;
