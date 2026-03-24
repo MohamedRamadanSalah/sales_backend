@@ -334,18 +334,21 @@ exports.getMyOrders = async (req, res, next) => {
         const offset = (page - 1) * limit;
 
         const countResult = await pool.query(
-            'SELECT COUNT(*) FROM orders WHERE client_id = $1', [req.user.id]
+            'SELECT COUNT(*) FROM orders o JOIN properties p ON o.property_id = p.id WHERE o.client_id = $1 OR p.user_id = $1', [req.user.id]
         );
         const totalCount = parseInt(countResult.rows[0].count);
 
         const result = await pool.query(`
             SELECT o.*,
-                   p.title_ar, p.title_en, p.price,
-                   l.name_ar AS location_name_ar, l.name_en AS location_name_en
+                   p.title_ar, p.title_en, p.price, p.user_id as seller_id,
+                   l.name_ar AS location_name_ar, l.name_en AS location_name_en,
+                   u.first_name as buyer_first_name, u.last_name as buyer_last_name,
+                   CASE WHEN p.user_id = $1 THEN true ELSE false END as is_seller
             FROM orders o
             JOIN properties p ON o.property_id = p.id
             JOIN locations l ON p.location_id = l.id
-            WHERE o.client_id = $1
+            JOIN users u ON o.client_id = u.id
+            WHERE o.client_id = $1 OR p.user_id = $1
             ORDER BY o.created_at DESC
             LIMIT $2 OFFSET $3
         `, [req.user.id, limit, offset]);
