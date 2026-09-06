@@ -143,10 +143,17 @@ describe('End-to-End User Journeys', () => {
         it('should allow buyer to place an order', async () => {
             const res = await request(app).post('/api/orders')
                 .set('Authorization', `Bearer ${buyerToken}`).set('Accept-Language', 'en')
-                .send({ property_id: propertyId, notes: 'I am ready to pay in cash' });
+                .send({
+                    property_id: propertyId,
+                    notes: 'I am ready to pay in cash',
+                    national_id: '11122233344455',
+                    address: '789 E2E Buyer Street, New Cairo, Egypt',
+                    payment_method: 'cash',
+                });
             expect(res.statusCode).toEqual(201);
             expect(res.body.data.status).toBe('pending');
             orderId = res.body.data.id;
+            invoiceId = res.body.data.invoice_id;
         });
 
         it('should show order in buyer\'s orders', async () => {
@@ -175,17 +182,30 @@ describe('End-to-End User Journeys', () => {
             expect(res.statusCode).toEqual(200);
         });
 
-        it('should allow admin to create an invoice', async () => {
+        it('should allow seller to approve the invoice', async () => {
+            const res = await request(app).patch(`/api/orders/invoices/${orderId}/seller-approval`)
+                .set('Authorization', `Bearer ${sellerToken}`)
+                .send({ status: 'APPROVED' });
+            expect(res.statusCode).toEqual(200);
+        });
+
+        it('should allow admin to fully approve the invoice', async () => {
+            const res = await request(app).patch(`/api/orders/invoices/${orderId}/admin-approval`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ status: 'APPROVED' });
+            expect(res.statusCode).toEqual(200);
+        });
+
+        it('should reject duplicate invoice creation for the same order', async () => {
             const res = await request(app).post('/api/orders/invoices')
                 .set('Authorization', `Bearer ${adminToken}`).set('Accept-Language', 'en')
                 .send({
                     order_id: orderId,
                     amount: 12000000,
                     due_date: '2026-12-31',
-                    payment_method: 'bank_transfer'
+                    payment_method: 'bank_transfer',
                 });
-            expect(res.statusCode).toEqual(201);
-            invoiceId = res.body.data.id;
+            expect(res.statusCode).toEqual(409);
         });
 
         it('should allow admin to mark invoice as paid', async () => {

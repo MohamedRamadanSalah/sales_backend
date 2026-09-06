@@ -6,6 +6,7 @@ const { authenticate, authorize } = require('../middlewares/auth');
 // Client routes
 router.get('/preview/:property_id', authenticate, orderController.previewInvoice);
 router.post('/', authenticate, orderController.createOrder);
+router.patch('/:id/cancel', authenticate, orderController.cancelOrder);
 router.get('/my', authenticate, orderController.getMyOrders);
 
 // Admin routes - Orders
@@ -19,7 +20,7 @@ router.patch('/invoices/:id/status', authenticate, authorize('admin'), orderCont
 
 // Detailed Invoice Routes
 router.get('/invoices/:id/detail', authenticate, orderController.getDetailedInvoice);
-router.patch('/invoices/:id/seller-approval', authenticate, orderController.sellerInvoiceApproval);
+router.patch('/invoices/:id/seller-approval', authenticate, authorize('client', 'broker'), orderController.sellerInvoiceApproval);
 router.patch('/invoices/:id/admin-approval', authenticate, authorize('admin'), orderController.adminInvoiceApproval);
 
 module.exports = router;

@@ -3,16 +3,22 @@ const app = require('../src/app');
 const { pool } = require('../src/db');
 
 describe('Orders & Invoices API', () => {
-    let clientToken, adminToken;
+    let clientToken, adminToken, sellerToken;
     let testPropertyId, testOrderId, testInvoiceId;
+
+    const validOrderFields = {
+        national_id: '12345678901234',
+        address: '123 Test Street, Cairo, Egypt',
+        payment_method: 'bank_transfer',
+    };
 
     beforeAll(async () => {
         // --- Clean up stale data from previous runs (e.g. --forceExit) ---
         await pool.query("DELETE FROM invoices WHERE order_id IN (SELECT id FROM orders WHERE property_id IN (SELECT id FROM properties WHERE title_ar = 'فيلا اختبار الطلبات'))");
         await pool.query("DELETE FROM orders WHERE property_id IN (SELECT id FROM properties WHERE title_ar = 'فيلا اختبار الطلبات')");
         await pool.query("DELETE FROM properties WHERE title_ar = 'فيلا اختبار الطلبات'");
-        await pool.query("DELETE FROM refresh_tokens WHERE user_id IN (SELECT id FROM users WHERE email = 'ordertest@realestate.com')");
-        await pool.query("DELETE FROM users WHERE email = 'ordertest@realestate.com'");
+        await pool.query("DELETE FROM refresh_tokens WHERE user_id IN (SELECT id FROM users WHERE email IN ('ordertest@realestate.com', 'ordertestseller@realestate.com'))");
+        await pool.query("DELETE FROM users WHERE email IN ('ordertest@realestate.com', 'ordertestseller@realestate.com')");
 
         // --- 1. Seed or Get Location & Category ---
         let locRes = await pool.query("SELECT id FROM locations WHERE name_en = 'New Cairo' LIMIT 1");
@@ -50,10 +56,22 @@ describe('Orders & Invoices API', () => {
             });
         clientToken = clientRes.body.data.token;
 
+        // --- 3b. Seed Seller User (property owner) ---
+        const sellerRes = await request(app)
+            .post('/api/auth/signup')
+            .send({
+                first_name: 'OrderTest',
+                last_name: 'Seller',
+                email: 'ordertestseller@realestate.com',
+                phone_number: '+201333333334',
+                password: 'testPass123',
+            });
+        sellerToken = sellerRes.body.data.token;
+
         // --- 4. Create an Approved Property to order ---
         const propRes = await request(app)
             .post('/api/properties')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${sellerToken}`)
             .send({
                 category_id: testCategoryId,
                 location_id: testLocationId,
@@ -72,7 +90,7 @@ describe('Orders & Invoices API', () => {
         if (testInvoiceId) await pool.query('DELETE FROM invoices WHERE id = $1', [testInvoiceId]);
         if (testOrderId) await pool.query('DELETE FROM orders WHERE id = $1', [testOrderId]);
         if (testPropertyId) await pool.query('DELETE FROM properties WHERE id = $1', [testPropertyId]);
-        await pool.query("DELETE FROM users WHERE email = 'ordertest@realestate.com'");
+        await pool.query("DELETE FROM users WHERE email IN ('ordertest@realestate.com', 'ordertestseller@realestate.com')");
     });
 
     describe('POST /api/orders (Client Purchase Request)', () => {
@@ -80,18 +98,19 @@ describe('Orders & Invoices API', () => {
             const res = await request(app).post('/api/orders')
                 .set('Authorization', `Bearer ${clientToken}`)
                 .set('Accept-Language', 'ar')
-                .send({ property_id: testPropertyId });
+                .send({ property_id: testPropertyId, ...validOrderFields });
 
             expect(res.statusCode).toEqual(201);
-            expect(res.body.message).toBe('تم إرسال طلب الشراء بنجاح');
+            expect(res.body.message).toBe('تم إنشاء الطلب والفاتورة بنجاح');
             expect(res.body.data.status).toBe('pending');
             testOrderId = res.body.data.id;
+            testInvoiceId = res.body.data.invoice_id;
         });
 
         it('should block duplicate orders for same property', async () => {
             const res = await request(app).post('/api/orders')
                 .set('Authorization', `Bearer ${clientToken}`)
-                .send({ property_id: testPropertyId });
+                .send({ property_id: testPropertyId, ...validOrderFields });
 
             expect(res.statusCode).toEqual(409);
         });
@@ -128,7 +147,7 @@ describe('Orders & Invoices API', () => {
     });
 
     describe('Admin Invoice Management', () => {
-        it('should create an invoice for the accepted order', async () => {
+        it('should reject duplicate invoice creation for the same order', async () => {
             const res = await request(app).post('/api/orders/invoices')
                 .set('Authorization', `Bearer ${adminToken}`)
                 .set('Accept-Language', 'ar')
@@ -136,12 +155,10 @@ describe('Orders & Invoices API', () => {
                     order_id: testOrderId,
                     amount: 1000000,
                     due_date: '2026-04-01',
-                    payment_method: 'bank_transfer'
+                    payment_method: 'bank_transfer',
                 });
 
-            expect(res.statusCode).toEqual(201);
-            expect(res.body.message).toBe('تم إنشاء الفاتورة بنجاح');
-            testInvoiceId = res.body.data.id;
+            expect(res.statusCode).toEqual(409);
         });
 
         it('should list all invoices', async () => {
@@ -152,7 +169,15 @@ describe('Orders & Invoices API', () => {
             expect(res.body.count).toBeGreaterThan(0);
         });
 
-        it('should mark an invoice as paid', async () => {
+        it('should mark an invoice as paid after full approval workflow', async () => {
+            await request(app).patch(`/api/orders/invoices/${testOrderId}/seller-approval`)
+                .set('Authorization', `Bearer ${sellerToken}`)
+                .send({ status: 'APPROVED' });
+
+            await request(app).patch(`/api/orders/invoices/${testOrderId}/admin-approval`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .send({ status: 'APPROVED' });
+
             const res = await request(app).patch(`/api/orders/invoices/${testInvoiceId}/status`)
                 .set('Authorization', `Bearer ${adminToken}`)
                 .set('Accept-Language', 'en')

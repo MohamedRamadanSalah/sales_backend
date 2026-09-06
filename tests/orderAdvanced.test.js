@@ -7,6 +7,12 @@ describe('Order Advanced Integration Tests', () => {
     let testPropertyId, testPropertyId2, testLocationId, testCategoryId;
     let rejectedOrderId, completedOrderId;
 
+    const validOrderFields = {
+        national_id: '98765432109876',
+        address: '456 Advanced Test Ave, Giza, Egypt',
+        payment_method: 'cash',
+    };
+
     beforeAll(async () => {
         // Clean up
         await pool.query("DELETE FROM invoices WHERE order_id IN (SELECT id FROM orders WHERE property_id IN (SELECT id FROM properties WHERE title_ar LIKE '%اختبار طلبات متقدم%'))");
@@ -90,7 +96,7 @@ describe('Order Advanced Integration Tests', () => {
         it('should NOT allow ordering a non-approved (pending) property', async () => {
             const res = await request(app).post('/api/orders')
                 .set('Authorization', `Bearer ${clientToken}`)
-                .send({ property_id: testPropertyId2 });
+                .send({ property_id: testPropertyId2, ...validOrderFields });
 
             expect(res.statusCode).toEqual(400);
         });
@@ -98,7 +104,7 @@ describe('Order Advanced Integration Tests', () => {
         it('should NOT allow ordering own property', async () => {
             const res = await request(app).post('/api/orders')
                 .set('Authorization', `Bearer ${ownerToken}`)
-                .send({ property_id: testPropertyId });
+                .send({ property_id: testPropertyId, ...validOrderFields });
 
             expect(res.statusCode).toEqual(400);
         });
@@ -106,14 +112,14 @@ describe('Order Advanced Integration Tests', () => {
         it('should NOT allow ordering non-existent property', async () => {
             const res = await request(app).post('/api/orders')
                 .set('Authorization', `Bearer ${clientToken}`)
-                .send({ property_id: 999999 });
+                .send({ property_id: 999999, ...validOrderFields });
 
             expect(res.statusCode).toEqual(404);
         });
 
         it('should require authentication to order', async () => {
             const res = await request(app).post('/api/orders')
-                .send({ property_id: testPropertyId });
+                .send({ property_id: testPropertyId, ...validOrderFields });
 
             expect(res.statusCode).toEqual(401);
         });
@@ -124,7 +130,7 @@ describe('Order Advanced Integration Tests', () => {
             // Create order for rejection test
             const r = await request(app).post('/api/orders')
                 .set('Authorization', `Bearer ${clientToken}`)
-                .send({ property_id: testPropertyId });
+                .send({ property_id: testPropertyId, ...validOrderFields });
             rejectedOrderId = r.body.data.id;
         });
 
@@ -144,7 +150,7 @@ describe('Order Advanced Integration Tests', () => {
 
             const orderRes = await request(app).post('/api/orders')
                 .set('Authorization', `Bearer ${clientToken}`)
-                .send({ property_id: testPropertyId });
+                .send({ property_id: testPropertyId, ...validOrderFields });
             completedOrderId = orderRes.body.data.id;
 
             // Accept first
@@ -206,15 +212,11 @@ describe('Order Advanced Integration Tests', () => {
 
         beforeAll(async () => {
             if (completedOrderId) {
-                const invRes = await request(app).post('/api/orders/invoices')
-                    .set('Authorization', `Bearer ${adminToken}`)
-                    .send({
-                        order_id: completedOrderId,
-                        amount: 500000,
-                        due_date: '2026-05-01',
-                        payment_method: 'cash',
-                    });
-                testInvoiceId = invRes.body.data?.id;
+                const invRes = await pool.query(
+                    'SELECT id FROM invoices WHERE order_id = $1',
+                    [completedOrderId]
+                );
+                testInvoiceId = invRes.rows[0]?.id;
             }
         });
 
